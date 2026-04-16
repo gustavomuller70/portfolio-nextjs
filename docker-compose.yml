@@ -3,7 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      network: host
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
     ports:
       - "3000:80"
     restart: unless-stopped
