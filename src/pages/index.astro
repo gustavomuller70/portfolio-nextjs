@@ -1,0 +1,138 @@
+---
+// === ZONA DE SERVIDOR (Cero JS al cliente) ===
+import { graphqlRequest } from "../lib/graphqlRequest";
+import Navbar from "../components/layout/Navbar";
+import Hero from "../components/home/Hero";
+import AboutAndStack from "../components/home/AboutAndStack";
+import ContactForm from "../components/home/ContactForm";
+import Footer from "../components/layout/Footer";
+
+const GET_PORTFOLIO_DATA = `
+  query GetPortfolioData {
+    proyectos(first: 6) { 
+      nodes {
+        id
+        title
+        excerpt
+        slug
+        date
+        featuredImage {
+          node {
+            sourceUrl
+            altText
+          }
+        }
+        detallesDelProyecto {
+          tecnologias
+        }
+      }
+    }
+  }
+`;
+
+// Hacemos la petición a WordPress en el servidor
+const data = await graphqlRequest(GET_PORTFOLIO_DATA);
+const proyectos = data?.proyectos?.nodes || [];
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Gustavo Müller | Portafolio</title>
+  </head>
+  <body class="bg-gray-950 text-white pb-24">
+    <main class="min-h-screen">
+      
+      <Navbar client:load />
+      <main class="min-h-screen">
+      <Hero client:load />
+
+      <AboutAndStack client:visible />
+
+      <section id="proyectos" class="max-w-7xl mx-auto px-6 md:px-12 pt-12">
+        <div class="flex items-center gap-4 mb-12">
+          <span class="w-12 h-1 bg-emerald-500 rounded-full"></span>
+          <h2 class="text-3xl md:text-4xl font-bold text-white">
+            Proyectos
+          </h2>
+        </div>
+
+        {proyectos.length === 0 ? (
+          <p class="text-gray-500">No hay proyectos publicados aún.</p>
+        ) : (
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {proyectos.map((proyecto) => {
+              let imageUrl = proyecto.featuredImage?.node?.sourceUrl;
+              if (imageUrl && imageUrl.includes('10.0.50.136')) {
+                const urlObj = new URL(imageUrl);
+                imageUrl = urlObj.pathname;
+              }
+              const imageAlt = proyecto.featuredImage?.node?.altText || proyecto.title;
+              const techString = proyecto.detallesDelProyecto?.tecnologias || "";
+              const topTechs = techString ? techString.split(',').map((t: string) => t.trim()).slice(0, 3) : [];
+
+              return (
+                <article class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-emerald-500 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-all duration-300 flex flex-col group">
+                  <a href={`/proyectos/${proyecto.slug}`} class="relative h-56 w-full block overflow-hidden bg-gray-800">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={imageAlt}
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    ) : (
+                      <div class="flex items-center justify-center w-full h-full text-gray-700">
+                        Sin imagen
+                      </div>
+                    )}
+                  </a>
+
+                  <div class="p-6 flex flex-col flex-grow">
+                    <a href={`/proyectos/${proyecto.slug}`}>
+                      <h3 class="text-xl font-semibold mb-3 text-white group-hover:text-emerald-400 transition-colors">
+                        {proyecto.title}
+                      </h3>
+                    </a>
+
+                    <div
+                      class="text-gray-400 text-sm mb-6 line-clamp-3"
+                      set:html={proyecto.excerpt}
+                    />
+
+                    <div class="mt-auto">
+                      {topTechs.length > 0 && (
+                        <div class="flex flex-wrap gap-2 mb-4">
+                          {topTechs.map((tech: string) => (
+                            <span class="bg-gray-950 text-gray-300 border border-gray-800 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider group-hover:border-gray-600 transition-colors">
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div class="flex justify-between items-center text-xs text-gray-500 border-t border-gray-800 pt-4">
+                        <span class="font-mono">{new Date(proyecto.date).toLocaleDateString()}</span>
+                        <a
+                          href={`/proyectos/${proyecto.slug}`}
+                          class="text-white hover:text-emerald-400 font-semibold flex items-center gap-1 transition-colors"
+                        >
+                          Ver Proyecto <span class="group-hover:translate-x-1 transition-transform" aria-hidden="true">&rarr;</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <ContactForm client:visible />
+
+      <Footer />
+
+    </main>
+  </body>
+</html>

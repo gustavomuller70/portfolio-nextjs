@@ -1,0 +1,112 @@
+---
+import { graphqlRequest } from "../../lib/graphqlRequest";
+import Navbar from "../../components/layout/Navbar";
+import Footer from "../../components/layout/Footer";
+
+// 1. ASTRO NECESITA SABER QUÉ PÁGINAS CREAR
+export async function getStaticPaths() {
+  // Pedimos solo los slugs de todos los proyectos
+  const query = `
+    query GetAllProjectSlugs {
+      proyectos(first: 100) {
+        nodes {
+          slug
+        }
+      }
+    }
+  `;
+  const data = await graphqlRequest(query);
+  const proyectos = data?.proyectos?.nodes || [];
+
+  // Devolvemos un array con las rutas que Astro debe generar
+  return proyectos.map((proyecto: any) => ({
+    params: { slug: proyecto.slug },
+  }));
+}
+
+// 2. OBTENER LOS DATOS DEL PROYECTO ACTUAL
+const { slug } = Astro.params;
+
+// Pedimos los datos completos solo para este slug en particular
+const GET_PROJECT_DETAILS = `
+  query GetProjectDetails($id: ID!) {
+    proyecto(id: $id, idType: SLUG) {
+      title
+      content
+      date
+      featuredImage {
+        node {
+          sourceUrl
+          altText
+        }
+      }
+      detallesDelProyecto {
+        tecnologias
+      }
+    }
+  }
+`;
+
+const projectData = await graphqlRequest(GET_PROJECT_DETAILS, { id: slug });
+const proyecto = projectData?.proyecto;
+
+// Limpieza de URL de imagen para el Proxy
+let imageUrl = proyecto?.featuredImage?.node?.sourceUrl;
+if (imageUrl && imageUrl.includes('10.0.50.136')) {
+  const urlObj = new URL(imageUrl);
+  imageUrl = urlObj.pathname;
+}
+
+const techs = proyecto?.detallesDelProyecto?.tecnologias || "";
+const tags = techs ? techs.split(',').map((t: string) => t.trim()) : [];
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{proyecto.title} | Gustavo Müller</title>
+  </head>
+  <body class="bg-gray-950 text-white min-h-screen flex flex-col">
+    
+    <Navbar client:load />
+
+    <main class="flex-grow container mx-auto px-6 py-24 max-w-4xl">
+      <a href="/#proyectos" class="text-emerald-500 hover:text-emerald-400 mb-8 inline-flex items-center gap-2 transition-colors">
+        <span>&larr;</span> Volver al Portafolio
+      </a>
+
+      <header class="mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-6">{proyecto.title}</h1>
+        
+        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-400 mb-6">
+          <span class="font-mono bg-gray-900 px-3 py-1 rounded-full border border-gray-800">
+            {new Date(proyecto.date).toLocaleDateString()}
+          </span>
+          {tags.map((tag: string) => (
+            <span class="bg-emerald-900/20 text-emerald-400 border border-emerald-800/50 px-3 py-1 rounded-full font-semibold uppercase tracking-wider text-xs">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </header>
+
+      {imageUrl && (
+        <div class="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden mb-12 border border-gray-800 shadow-2xl">
+          <img 
+            src={imageUrl} 
+            alt={proyecto.featuredImage?.node?.altText || proyecto.title}
+            class="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
+      <article class="prose prose-invert prose-emerald lg:prose-lg max-w-none prose-img:rounded-xl prose-img:border prose-img:border-gray-800">
+        <div set:html={proyecto.content} />
+      </article>
+
+    </main>
+
+    <Footer />
+  </body>
+</html>
