@@ -19,7 +19,7 @@ jobs:
         run: |
           # Inyectamos los secretos de GitHub en el archivo .env del servidor
           echo "WORDPRESS_API_URL=${{ secrets.WORDPRESS_API_URL }}" > .env
-          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" > .env
+          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
 
       - name: 🚀 Compilar y Desplegar con Docker
         run: |
