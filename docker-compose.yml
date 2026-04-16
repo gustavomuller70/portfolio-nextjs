@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: host       # <--- LA LLAVE MÁGICA: Le permite a Astro ver tu WordPress durante la compilación
     ports:
       - "3000:80"
     restart: unless-stopped
