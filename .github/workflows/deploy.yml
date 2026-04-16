@@ -21,6 +21,9 @@ jobs:
           echo "WORDPRESS_API_URL=${{ secrets.WORDPRESS_API_URL }}" > .env
           echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
 
+          # Aseguramos que la red de proxy exista. Si no existe, la crea. Si ya existe, ignora el error (|| true)
+          docker network create proxy-network || true
+
       - name: 🚀 Compilar y Desplegar con Docker
         run: |
           # El agente ejecuta el comando de despliegue automáticamente
