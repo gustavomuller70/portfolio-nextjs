@@ -17,8 +17,9 @@ jobs:
 
       - name: ⚙️ Preparar entorno
         run: |
-          # Creamos un .env vacío por si tu docker-compose lo requiere para arrancar
-          touch .env
+          # Inyectamos los secretos de GitHub en el archivo .env del servidor
+          echo "WORDPRESS_API_URL=${{ secrets.WORDPRESS_API_URL }}" > .env
+          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" > .env
 
       - name: 🚀 Compilar y Desplegar con Docker
         run: |
