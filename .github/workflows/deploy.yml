@@ -1,0 +1,31 @@
+name: Despliegue Automático Proxmox
+
+# ¿Cuándo se ejecuta esto? Cuando alguien haga un "push" a la rama "main"
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    # ¿Dónde se ejecuta esto? En tu servidor (el agente que acabas de instalar)
+    runs-on: self-hosted
+
+    steps:
+      - name: 📥 Descargar nuevo código desde GitHub
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Preparar entorno
+        run: |
+          # Creamos un .env vacío por si tu docker-compose lo requiere para arrancar
+          touch .env
+
+      - name: 🚀 Compilar y Desplegar con Docker
+        run: |
+          # El agente ejecuta el comando de despliegue automáticamente
+          docker compose up -d --build --force-recreate
+
+      - name: 🧹 Limpieza de Servidor
+        run: |
+          # Borramos las imágenes viejas de Docker para no llenar el disco de Proxmox
+          docker system prune -f
